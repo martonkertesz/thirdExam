@@ -4,6 +4,7 @@ import { safeFetch } from "./api";
 import { z } from "zod";
 
 const server = express();
+server.use(cors());    // !!! +import
 server.use(express.json());
 
 
@@ -33,23 +34,23 @@ const saveUsers = async (users: User[]): Promise<void> => {
 
 
 server.post("/api/register", async (req: Request, res: Response) => {
-    const { email, password, confirmPassword } = req.body;
-
+    // const { email, password, confirmPassword } = result.data; -> ERROR?
     
-    const result = UserSchema.safeParse({ email, password, confirmPassword });
+    const result = UserSchema.safeParse(req.body);
     if (!result.success) {
         return res.status(400).json({ error: result.error.issues });
     }
-
+    
+    const { email, password, confirmPassword } = result.data;
     
     const users = await getUsers();
     const existingUser = users.find(user => user.email === email);
     if (existingUser) {
-        return res.status(400).json({ error: "Email is already registered" });
+        return res.status(409).json({ error: "Email is already registered" });
     }
 
     
-    const newUser: User = { email, password, confirmPassword };
+    const newUser: User = { email, password, confirmPassword }; //- confirm, + id
     users.push(newUser);
     await saveUsers(users);
 
